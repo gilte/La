@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Endereços Bitcoin</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bitcoinjs-lib/6.0.0/bitcoinjs-lib.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Gerador de Endereços Bitcoin Reais</h1>
+    <button onclick="generateWallet()">Gerar Endereço</button>
+
+    <div id="output"></div>
+
+    <script>
+        function generateWallet() {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+
+            // Gerando chave privada
+            const ec = new elliptic.ec('secp256k1');
+            const keyPair = ec.genKeyPair();
+            const privateKey = keyPair.getPrivate('hex');
+
+            // Obtendo chave pública
+            const publicKey = keyPair.getPublic().encode('hex');
+
+            // Convertendo a chave pública para um endereço Bitcoin
+            const { address } = bitcoin.payments.p2pkh({ pubkey: Buffer.from(keyPair.getPublic('array')) });
+
+            // Exibindo os resultados
+            const entry = document.createElement('div');
+            entry.innerHTML = `<p><strong>Chave Privada:</strong> ${privateKey}</p>
+                               <p><strong>Chave Pública:</strong> ${publicKey}</p>
+                               <p><strong>Endereço Bitcoin:</strong> ${address}</p>`;
+            output.appendChild(entry);
+        }
+    </script>
+
+</body>
+</html>
