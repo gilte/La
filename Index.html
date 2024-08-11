@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Endereços Bitcoin</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bitcoinjs-lib/6.0.0/bitcoinjs-lib.min.js"></script>
+    <title>Verificador de Saldo Bitcoin</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -17,37 +15,49 @@
             border: 1px solid #ccc;
             background-color: #f9f9f9;
         }
+        input[type=text] {
+            padding: 8px;
+            width: 300px;
+        }
+        button {
+            padding: 8px 12px;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Gerador de Endereços Bitcoin Reais</h1>
-    <button onclick="generateWallet()">Gerar Endereço</button>
+    <h1>Verificador de Saldo Bitcoin</h1>
+    <label for="address">Endereço Bitcoin:</label>
+    <input type="text" id="address" placeholder="Insira o endereço Bitcoin">
+    <button onclick="checkBalance()">Checar Saldo</button>
 
     <div id="output"></div>
 
     <script>
-        function generateWallet() {
+        function checkBalance() {
+            const address = document.getElementById('address').value;
             const output = document.getElementById('output');
-            output.innerHTML = '';
+            output.innerHTML = 'Carregando...';
 
-            // Gerando chave privada
-            const ec = new elliptic.ec('secp256k1');
-            const keyPair = ec.genKeyPair();
-            const privateKey = keyPair.getPrivate('hex');
+            if (!address) {
+                output.innerHTML = 'Por favor, insira um endereço Bitcoin válido.';
+                return;
+            }
 
-            // Obtendo chave pública
-            const publicKey = keyPair.getPublic().encode('hex');
+            // URL da API do Blockstream para pegar informações sobre o endereço
+            const url = `https://blockstream.info/api/address/${address}`;
 
-            // Convertendo a chave pública para um endereço Bitcoin
-            const { address } = bitcoin.payments.p2pkh({ pubkey: Buffer.from(keyPair.getPublic('array')) });
-
-            // Exibindo os resultados
-            const entry = document.createElement('div');
-            entry.innerHTML = `<p><strong>Chave Privada:</strong> ${privateKey}</p>
-                               <p><strong>Chave Pública:</strong> ${publicKey}</p>
-                               <p><strong>Endereço Bitcoin:</strong> ${address}</p>`;
-            output.appendChild(entry);
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const balance = data.chain_stats.funded_txo_sum - data.chain_stats.spent_txo_sum;
+                    output.innerHTML = `<p>Saldo do endereço <strong>${address}</strong>: <strong>${balance / 100000000} BTC</strong></p>`;
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar saldo:', error);
+                    output.innerHTML = 'Erro ao buscar saldo. Verifique o endereço e tente novamente.';
+                });
         }
     </script>
 
